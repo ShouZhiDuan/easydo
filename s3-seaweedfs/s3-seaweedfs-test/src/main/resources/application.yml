@@ -1,0 +1,64 @@
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+# Spring配置
+spring:
+  application:
+    name: s3-seaweedfs-test
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      enabled: true
+
+# SeaweedFS S3配置
+seaweedfs:
+  s3:
+    enabled: true
+    access-key: nvx1
+    secret-key: nvx1
+    bucket-name: gongan
+    endpoint: http://192.168.60.70:38333
+    region: us-east-1
+    path-style-access-enabled: true
+    connection-timeout: 10000
+    request-timeout: 30000
+    max-connections: 50
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.techzhi: DEBUG
+    com.amazonaws: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/s3-seaweedfs-test.log
+    max-size: 10MB
+    max-history: 30
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# 应用信息
+info:
+  app:
+    name: S3 SeaweedFS Test Application
+    description: Test application for S3 SeaweedFS Spring Boot Starter
+    version: 1.0.0
+    author: TechZhi

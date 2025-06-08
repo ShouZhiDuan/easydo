@@ -1,0 +1,165 @@
+# Spring Boot 应用配置
+spring:
+  application:
+    name: sql-csv-exporter
+  
+  # 数据源配置
+  datasource:
+    # 默认使用H2内存数据库进行测试
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+    # MySQL配置示例（取消注释并配置实际参数）
+    # url: jdbc:mysql://localhost:3306/your_database?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    # driver-class-name: com.mysql.cj.jdbc.Driver
+    # username: your_username
+    # password: your_password
+    
+    # PostgreSQL配置示例（取消注释并配置实际参数）
+    # url: jdbc:postgresql://localhost:5432/your_database
+    # driver-class-name: org.postgresql.Driver
+    # username: your_username
+    # password: your_password
+    
+    # 连接池配置
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+  
+  # H2数据库控制台（仅用于测试）
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  
+  # Web配置
+  web:
+    resources:
+      static-locations: classpath:/static/
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  
+  # Tomcat配置
+  tomcat:
+    max-connections: 8192
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 20000
+    max-http-form-post-size: 100MB
+
+# 应用自定义配置
+app:
+  export:
+    # 导出文件输出目录
+    output-directory: ./exports
+    # 最大SQL语句数量
+    max-sql-count: 50
+    # 每个查询最大记录数
+    max-records-per-query: 100000
+    # 是否启用并行执行
+    enable-parallel-execution: true
+    # 默认文件保留天数
+    default-file-retention-days: 7
+  
+  # 安全配置
+  security:
+    # 是否启用SQL安全验证
+    enable-sql-validation: true
+    # 允许的文件下载目录
+    allowed-download-paths:
+      - ./exports
+  
+  # 性能配置
+  performance:
+    # Excel导出时内存中保持的行数
+    excel-rows-in-memory: 1000
+    # SQL执行超时时间（秒）
+    sql-timeout-seconds: 300
+    # 线程池大小
+    thread-pool-size: 4
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.example.sqlcsv: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.apache.poi: WARN
+  
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  
+  file:
+    name: ./logs/sql-csv-exporter.log
+    max-size: 100MB
+    max-history: 30
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+# 应用信息
+info:
+  app:
+    name: SQL to Excel Exporter
+    description: Spring Boot application for executing SQL queries and exporting results to Excel
+    version: 1.0.0
+    author: System
+  build:
+    java-version: ${java.version}
+    spring-boot-version: ${spring-boot.version}

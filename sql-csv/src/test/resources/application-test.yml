@@ -1,0 +1,50 @@
+# 测试环境配置
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  
+  h2:
+    console:
+      enabled: true
+
+# 测试环境应用配置
+app:
+  export:
+    output-directory: ./test-exports
+    max-sql-count: 10
+    max-records-per-query: 1000
+    enable-parallel-execution: true
+    default-file-retention-days: 1
+  
+  security:
+    enable-sql-validation: true
+    allowed-download-paths:
+      - ./test-exports
+  
+  performance:
+    excel-rows-in-memory: 100
+    sql-timeout-seconds: 30
+    thread-pool-size: 2
+
+# 日志配置
+logging:
+  level:
+    root: WARN
+    com.example.sqlcsv: DEBUG
+    org.springframework.jdbc: INFO
+    org.apache.poi: WARN
+  
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

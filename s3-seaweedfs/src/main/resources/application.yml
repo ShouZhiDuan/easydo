@@ -1,0 +1,19 @@
+# SeaweedFS S3 配置示例
+seaweedfs:
+  s3:
+    enabled: true
+    access-key: nvx1
+    secret-key: nvx1
+    bucket-name: gongan
+    endpoint: http://192.168.60.70:38333
+    region: us-east-1
+    path-style-access-enabled: true
+    connection-timeout: 10000
+    request-timeout: 30000
+    max-connections: 50
+
+# 日志配置
+logging:
+  level:
+    com.techzhi.common.s3.seaweedfs: INFO
+    com.amazonaws: WARN

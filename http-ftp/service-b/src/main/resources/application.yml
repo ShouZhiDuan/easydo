@@ -1,0 +1,70 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: http-ftp-service-b
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 10
+        queue-capacity: 100
+    scheduling:
+      pool:
+        size: 3
+
+logging:
+  level:
+    com.example.serviceb: DEBUG
+    org.apache.commons.net: INFO
+  file:
+    name: logs/service-b.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# FTP配置 (针对vsftp优化)
+ftp:
+  local:
+    host: 192.168.60.70
+    port: 10021
+    username: ftpuser0
+    password: cft6yhnbv@ga0351
+    passive-mode: true
+    working-directory: /data
+    request-directory: /data/requests
+    response-directory: /data/responses
+    # vsftp优化配置
+    connect-timeout: 30000
+    data-timeout: 60000
+    control-keep-alive-timeout: 300
+    buffer-size: 8192
+    binary-mode: true
+    encoding: UTF-8
+  remote:
+    host: 192.168.60.69
+    port: 10021
+    username: ftpuser0
+    password: cft6yhnbv@ga0351
+    passive-mode: true
+    working-directory: /data
+    request-directory: /data/requests
+    response-directory: /data/responses
+    # vsftp优化配置
+    connect-timeout: 30000
+    data-timeout: 60000
+    control-keep-alive-timeout: 300
+    buffer-size: 8192
+    binary-mode: true
+    encoding: UTF-8
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

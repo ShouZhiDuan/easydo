@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: http-ftp-service-a
+  profiles:
+    active: dev
+
+logging:
+  level:
+    com.example.servicea: INFO
+    org.apache.commons.net: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/service-a.log
+
+ftp:
+  local-host: 192.168.60.69
+  local-port: 10021
+  local-username: ftpuser0
+  local-password: cft6yhnbv@ga0351
+  remote-host: 192.168.60.70
+  remote-port: 10021
+  remote-username: ftpuser0
+  remote-password: cft6yhnbv@ga0351
+  # vsftp优化配置
+  connect-timeout: 30000
+  data-timeout: 60000
+  control-keep-alive-timeout: 300
+  buffer-size: 8192
+  passive-mode: true
+  binary-mode: true
+  encoding: UTF-8
+  working-directory: /data/exchange
+  request-directory: /data/exchange/requests
+  response-directory: /data/exchange/responses
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

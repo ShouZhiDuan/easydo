@@ -1,0 +1,11 @@
+id,name,age,salary,is_active,created_date,email,department
+1,张三,25,50000.50,true,2023-01-01,zhangsan@example.com,技术部
+2,李四,30,60000.75,false,2023-01-02,lisi@example.com,销售部
+3,王五,35,70000.00,true,2023-01-03,wangwu@example.com,市场部
+4,赵六,28,55000.25,true,2023-01-04,zhaoliu@example.com,技术部
+5,钱七,32,65000.80,false,2023-01-05,qianqi@example.com,人事部
+6,孙八,29,58000.60,true,2023-01-06,sunba@example.com,财务部
+7,周九,27,52000.40,true,2023-01-07,zhoujiu@example.com,技术部
+8,吴十,33,68000.90,false,2023-01-08,wushi@example.com,销售部
+9,郑十一,31,62000.70,true,2023-01-09,zhengshiyi@example.com,市场部
+10,王十二,26,51000.30,true,2023-01-10,wangshier@example.com,技术部
