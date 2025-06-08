@@ -16,7 +16,7 @@
 
 ### 1. 环境要求
 
-- Java 8+
+- Java 17+
 - Maven 3.6+
 - SeaweedFS服务（已启动S3网关）
 
