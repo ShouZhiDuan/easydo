@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel文件预览器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 50px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #5a67d8;
+            background: #f1f5f9;
+        }
+
+        .upload-area.dragover {
+            border-color: #4c51bf;
+            background: #e6fffa;
+        }
+
+        .upload-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #25c06c;
+        }
+
+        .sheet-tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .sheet-tab {
+            padding: 12px 20px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-bottom: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .sheet-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .sheet-tab:hover:not(.active) {
+            background: #edf2f7;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        .excel-table th {
+            background: #4a5568;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .excel-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .excel-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .excel-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .excel-table tr:nth-child(even):hover {
+            background: #e2e8f0;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Excel文件预览器</h1>
+            <p>上传Excel文件并在线预览内容</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">点击上传Excel文件</div>
+                    <div class="upload-hint">支持 .xlsx 和 .xls 格式，最大10MB</div>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls">
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">
+                        选择文件
+                    </button>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>正在解析文件，请稍候...</div>
+            </div>
+
+            <div id="messageArea"></div>
+
+            <div id="resultArea" style="display: none;">
+                <div class="stats" id="stats"></div>
+                <div class="sheet-tabs" id="sheetTabs"></div>
+                <div class="table-container" id="tableContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/excel';
+        
+        // DOM元素
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const loading = document.getElementById('loading');
+        const messageArea = document.getElementById('messageArea');
+        const resultArea = document.getElementById('resultArea');
+        const stats = document.getElementById('stats');
+        const sheetTabs = document.getElementById('sheetTabs');
+        const tableContainer = document.getElementById('tableContainer');
+
+        let currentData = null;
+
+        // 文件上传处理
+        fileInput.addEventListener('change', handleFileUpload);
+
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            // 验证文件类型
+            const validTypes = [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel'
+            ];
+            
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+                showMessage('请选择有效的Excel文件（.xlsx 或 .xls）', 'error');
+                return;
+            }
+
+            // 验证文件大小
+            if (file.size > 10 * 1024 * 1024) {
+                showMessage('文件大小不能超过10MB', 'error');
+                return;
+            }
+
+            uploadFile(file);
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showLoading(true);
+            clearMessages();
+
+            fetch(`${API_BASE}/preview`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.success) {
+                    showMessage('文件解析成功！', 'success');
+                    displayExcelData(data.data);
+                } else {
+                    showMessage(data.message || '文件解析失败', 'error');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showMessage('网络错误，请重试', 'error');
+                console.error('Error:', error);
+            });
+        }
+
+        function displayExcelData(data) {
+            currentData = data;
+            
+            // 显示统计信息
+            displayStats(data);
+            
+            // 显示工作表标签
+            displaySheetTabs(data.sheets);
+            
+            // 显示第一个工作表
+            if (data.sheets.length > 0) {
+                displaySheet(data.sheets[0]);
+            }
+            
+            resultArea.style.display = 'block';
+        }
+
+        function displayStats(data) {
+            const totalSheets = data.sheets.length;
+            const totalRows = data.sheets.reduce((sum, sheet) => sum + sheet.totalRows, 0);
+            const totalColumns = data.sheets.reduce((sum, sheet) => sum + sheet.headers.length, 0);
+
+            stats.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-number">${totalSheets}</div>
+                    <div class="stat-label">工作表</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${totalRows}</div>
+                    <div class="stat-label">总行数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${Math.round(totalColumns / totalSheets)}</div>
+                    <div class="stat-label">平均列数</div>
+                </div>
+            `;
+        }
+
+        function displaySheetTabs(sheets) {
+            sheetTabs.innerHTML = sheets.map((sheet, index) => `
+                <div class="sheet-tab ${index === 0 ? 'active' : ''}" onclick="selectSheet(${index})">
+                    ${sheet.sheetName}
+                </div>
+            `).join('');
+        }
+
+        function selectSheet(index) {
+            // 更新标签状态
+            document.querySelectorAll('.sheet-tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            
+            // 显示选中的工作表
+            displaySheet(currentData.sheets[index]);
+        }
+
+        function displaySheet(sheet) {
+            if (!sheet.rows || sheet.rows.length === 0) {
+                tableContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #718096;">此工作表没有数据</div>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'excel-table';
+
+            // 创建表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            sheet.headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // 创建表体
+            const tbody = document.createElement('tbody');
+            sheet.rows.forEach(row => {
+                const tr = document.createElement('tr');
+                sheet.headers.forEach(header => {
+                    const td = document.createElement('td');
+                    const value = row[header];
+                    
+                    if (value === null || value === undefined) {
+                        td.textContent = '';
+                    } else if (typeof value === 'object' && value instanceof Date) {
+                        td.textContent = value.toLocaleDateString();
+                    } else {
+                        td.textContent = String(value);
+                    }
+                    
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            tableContainer.innerHTML = '';
+            tableContainer.appendChild(table);
+        }
+
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            messageArea.appendChild(messageDiv);
+
+            // 自动消失
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        function clearMessages() {
+            messageArea.innerHTML = '';
+        }
+
+        // 健康检查
+        fetch(`${API_BASE}/health`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('服务状态:', data);
+            })
+            .catch(error => {
+                console.error('服务不可用:', error);
+            });
+    </script>
+</body>
+</html> 
