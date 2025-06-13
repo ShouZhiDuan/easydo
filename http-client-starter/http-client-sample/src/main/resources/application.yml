@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: http-client-sample
+
+techzhi:
+  http-client:
+    enabled: true
+    client-type: OK_HTTP
+    connect-timeout: 10s
+    read-timeout: 30s
+    write-timeout: 30s
+    
+    # 连接池配置
+    pool:
+      max-total: 200
+      default-max-per-route: 50
+      time-to-live: 5m
+    
+    # 重试配置
+    retry:
+      enabled: true
+      max-attempts: 3
+      retry-interval: 1s
+    
+    # 日志配置
+    logging:
+      enabled: true
+      log-request: true
+      log-response: true
+      log-headers: true
+
+logging:
+  level:
+    com.techzhi: DEBUG
+    root: INFO 
