@@ -31,7 +31,6 @@ public class HttpClientAutoConfiguration {
      * Apache HttpClient 5配置
      */
     @Configuration
-    @ConditionalOnClass(name = "org.apache.hc.client5.http.impl.classic.CloseableHttpClient")
     @ConditionalOnProperty(prefix = "techzhi.http-client", name = "client-type", havingValue = "APACHE_HTTP_CLIENT")
     static class ApacheHttpClientConfiguration {
 
@@ -47,7 +46,6 @@ public class HttpClientAutoConfiguration {
      * OkHttp客户端配置
      */
     @Configuration
-    @ConditionalOnClass(name = "okhttp3.OkHttpClient")
     @ConditionalOnProperty(prefix = "techzhi.http-client", name = "client-type", havingValue = "OK_HTTP", matchIfMissing = true)
     static class OkHttpClientConfiguration {
 
