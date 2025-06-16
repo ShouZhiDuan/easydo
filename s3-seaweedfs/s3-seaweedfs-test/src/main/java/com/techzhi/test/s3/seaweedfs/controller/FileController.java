@@ -160,9 +160,8 @@ public class FileController {
      * 检查文件是否存在
      */
     @Operation(summary = "检查文件是否存在")
-    @GetMapping("/exists/{key:.+}")
-    public ResponseEntity<Map<String, Object>> checkFileExists(
-            @Parameter(description = "文件键名") @PathVariable String key) {
+    @GetMapping("/exists")
+    public ResponseEntity<Map<String, Object>> checkFileExists(@RequestParam(name = "key") String key) {
         
         Map<String, Object> result = new HashMap<>();
         
