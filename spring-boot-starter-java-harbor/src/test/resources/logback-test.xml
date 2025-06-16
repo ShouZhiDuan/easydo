@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 控制台输出配置 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 关闭Apache HTTP Client的调试日志 -->
+    <logger name="org.apache.hc.client5.http.wire" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+    
+    <logger name="org.apache.hc.client5.http.headers" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+    
+    <logger name="org.apache.http" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- 关闭OkHttp的调试日志 -->
+    <logger name="okhttp3" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Spring相关日志 -->
+    <logger name="org.springframework" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Harbor项目日志保持INFO级别 -->
+    <logger name="com.techzhi.harbor" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- 根日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration> 

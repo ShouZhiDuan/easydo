@@ -1,0 +1,17 @@
+harbor:
+  # Harbor服务器地址
+  host: http://192.168.50.103
+  # Harbor用户名
+  username: admin
+  # Harbor密码
+  password: Harbor12345
+  # 默认项目空间
+  project: flow
+  # 连接超时时间（毫秒）
+  connect-timeout: 30000
+  # 读取超时时间（毫秒）
+  read-timeout: 60000
+  # 写入超时时间（毫秒）
+  write-timeout: 60000
+  # 是否启用SSL验证
+  ssl-enabled: false 

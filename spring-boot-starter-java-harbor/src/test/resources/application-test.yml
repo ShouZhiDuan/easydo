@@ -1,0 +1,25 @@
+# 测试环境日志配置
+logging:
+  level:
+    # 关闭Apache HTTP Client的调试日志
+    org.apache.hc.client5.http.wire: WARN
+    org.apache.hc.client5.http.headers: WARN
+    org.apache.http: WARN
+    # 关闭OkHttp的调试日志
+    okhttp3: WARN
+    # Harbor相关日志保持INFO级别
+    com.techzhi.harbor: INFO
+    # Spring Boot相关日志
+    org.springframework: WARN
+    # 根日志级别
+    root: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Harbor配置（测试环境）
+harbor:
+  enabled: true
+  address: "http://192.168.50.103/"
+  username: "admin"
+  password: "Harbor12345"
+  project: "flow" 
