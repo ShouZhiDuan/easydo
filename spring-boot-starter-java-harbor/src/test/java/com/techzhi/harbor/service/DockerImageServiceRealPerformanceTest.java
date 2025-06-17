@@ -5,8 +5,6 @@ import com.techzhi.harbor.exception.HarborException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
-import org.springframework.test.context.jdbc.Sql;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
