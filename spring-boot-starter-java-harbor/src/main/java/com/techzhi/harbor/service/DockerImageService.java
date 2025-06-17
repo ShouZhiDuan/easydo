@@ -4,7 +4,8 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.core.command.PushImageResultCallback;
+import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.model.PushResponseItem;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
@@ -69,8 +70,6 @@ public class DockerImageService {
                     .dockerHost(config.getDockerHost())
                     .sslConfig(config.getSSLConfig())
                     .maxConnections(200)  // 增加最大连接数
-                    .connectionTimeout(Duration.ofSeconds(60))  // 增加连接超时
-                    .responseTimeout(Duration.ofMinutes(15))    // 增加响应超时
                     .build();
 
             // 创建Docker客户端
@@ -153,7 +152,7 @@ public class DockerImageService {
             
             dockerClient.pushImageCmd(fullImageName)
                     .withAuthConfig(authConfig)
-                    .exec(new PushImageResultCallback())
+                    .exec(new ResultCallback.Adapter<PushResponseItem>())
                     .awaitCompletion(15, TimeUnit.MINUTES);
             
             logger.info("Successfully pushed image: {}", fullImageName);
@@ -652,7 +651,7 @@ public class DockerImageService {
             
             dockerClient.pushImageCmd(targetImageName)
                     .withAuthConfig(authConfig)
-                    .exec(new PushImageResultCallback())
+                    .exec(new ResultCallback.Adapter<PushResponseItem>())
                     .awaitCompletion(15, TimeUnit.MINUTES);
             
             long pushTime = System.currentTimeMillis() - pushStartTime;

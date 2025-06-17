@@ -19,11 +19,11 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>2.7.18</spring-boot.version>
-        <okhttp.version>4.12.0</okhttp.version>
-        <jackson.version>2.15.4</jackson.version>
+        <okhttp.version>3.14.9</okhttp.version>
+        <jackson.version>2.13.5</jackson.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <junit.version>5.10.1</junit.version>
-        <docker-java.version>3.3.4</docker-java.version>
+        <junit.version>4.13.2</junit.version>
+        <docker-java.version>3.2.14</docker-java.version>
     </properties>
 
     <dependencies>
@@ -84,8 +84,8 @@
         </dependency>
         
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
@@ -116,6 +116,9 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <compilerArgs>
+                        <arg>-Xlint:deprecation</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             

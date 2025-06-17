@@ -24,7 +24,7 @@ class DockerImageServiceRealPerformanceTest {
     private DockerImageService dockerImageService;
     
     // 您的真实镜像文件路径
-    private static final String REAL_IMAGE_PATH = "/Users/shouzhi/temp/shanxi/image_tar/cust-cont-x86_20250616181022.tar";
+    private static final String REAL_IMAGE_PATH = "/Users/shouzhi/temp/shanxi/image_tar/cust-cont_20250617105631-x86.tar";
 
     @BeforeEach
     void setUp() {

@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +45,7 @@ public class HarborImageService {
     public List<HarborImage> listImages(String projectName) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"));
             return harborClient.get(path, new TypeReference<List<HarborImage>>() {});
         } catch (Exception e) {
             logger.error("Failed to list images for project: {}", projectName, e);
@@ -67,8 +66,8 @@ public class HarborImageService {
     public List<HarborTag> listImageTags(String projectName, String imageName) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories/%s/artifacts", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(imageName, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"),
+                    URLEncoder.encode(imageName, "UTF-8"));
             return harborClient.get(path, new TypeReference<List<HarborTag>>() {});
         } catch (Exception e) {
             logger.error("Failed to list tags for image: {}/{}", projectName, imageName, e);
@@ -89,8 +88,8 @@ public class HarborImageService {
     public boolean imageExists(String projectName, String imageName) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories/%s", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(imageName, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"),
+                    URLEncoder.encode(imageName, "UTF-8"));
             harborClient.get(path, new TypeReference<Map<String, Object>>() {});
             return true;
         } catch (HarborException e) {
@@ -117,9 +116,9 @@ public class HarborImageService {
     public boolean imageTagExists(String projectName, String imageName, String tag) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories/%s/artifacts/%s", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(imageName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(tag, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"),
+                    URLEncoder.encode(imageName, "UTF-8"),
+                    URLEncoder.encode(tag, "UTF-8"));
             harborClient.get(path, new TypeReference<Map<String, Object>>() {});
             return true;
         } catch (HarborException e) {
@@ -146,8 +145,8 @@ public class HarborImageService {
     public void deleteImage(String projectName, String imageName) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories/%s", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(imageName, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"),
+                    URLEncoder.encode(imageName, "UTF-8"));
             harborClient.delete(path);
             logger.info("Successfully deleted image: {}/{}", projectName, imageName);
         } catch (Exception e) {
@@ -169,9 +168,9 @@ public class HarborImageService {
     public void deleteImageTag(String projectName, String imageName, String tag) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories/%s/artifacts/%s", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(imageName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(tag, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"),
+                    URLEncoder.encode(imageName, "UTF-8"),
+                    URLEncoder.encode(tag, "UTF-8"));
             harborClient.delete(path);
             logger.info("Successfully deleted image tag: {}/{}: {}", projectName, imageName, tag);
         } catch (Exception e) {
@@ -193,8 +192,8 @@ public class HarborImageService {
     public HarborImage getImageInfo(String projectName, String imageName) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories/%s", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(imageName, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"),
+                    URLEncoder.encode(imageName, "UTF-8"));
             return harborClient.get(path, new TypeReference<HarborImage>() {});
         } catch (Exception e) {
             logger.error("Failed to get image info: {}/{}", projectName, imageName, e);
@@ -215,8 +214,8 @@ public class HarborImageService {
     public List<HarborImage> searchImages(String projectName, String keyword) {
         try {
             String path = String.format("/api/v2.0/projects/%s/repositories?q=%s", 
-                    URLEncoder.encode(projectName, StandardCharsets.UTF_8),
-                    URLEncoder.encode(keyword, StandardCharsets.UTF_8));
+                    URLEncoder.encode(projectName, "UTF-8"),
+                    URLEncoder.encode(keyword, "UTF-8"));
             return harborClient.get(path, new TypeReference<List<HarborImage>>() {});
         } catch (Exception e) {
             logger.error("Failed to search images with keyword: {} in project: {}", keyword, projectName, e);
