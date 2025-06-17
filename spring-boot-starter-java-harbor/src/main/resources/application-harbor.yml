@@ -2,9 +2,9 @@ harbor:
   # Harbor服务器地址
   host: http://192.168.50.103
   # Harbor用户名
-  username: admin
+  username: flow
   # Harbor密码
-  password: Harbor12345
+  password: Nvx_1024
   # 默认项目空间
   project: flow
   # 连接超时时间（毫秒）
@@ -14,4 +14,4 @@ harbor:
   # 写入超时时间（毫秒）
   write-timeout: 60000
   # 是否启用SSL验证
-  ssl-enabled: false 
+  ssl-enabled: false
