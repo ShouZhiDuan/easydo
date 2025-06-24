@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  k8m:
+    container_name: k8m
+    image: registry.cn-hangzhou.aliyuncs.com/minik8m/k8m:latest
+    restart: unless-stopped
+    ports:
+      - "3618:3618"
+    environment:
+      TZ: Asia/Shanghai
+      NODE_ENV: production
+      KUBECONFIG: /app/.kube/config/config
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/.kube/config
+    networks:
+      - k8m-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3618/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.k8m.rule=Host(`k8m.local`)"
+      - "traefik.http.services.k8m.loadbalancer.server.port=3618"
+
+networks:
+  k8m-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  k8m-data:
+    driver: local
+  k8m-logs:
+    driver: local
+  k8m-config:
+    driver: local

@@ -1,6 +1,6 @@
 harbor:
   # Harbor服务器地址
-  host: http://192.168.50.103
+  host: 192.168.50.103
   # Harbor用户名
   username: flow
   # Harbor密码

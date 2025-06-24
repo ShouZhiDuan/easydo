@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nfs-test-pod
+  labels:
+    app: nfs-test
+spec:
+  containers:
+  - name: nfs-test-container
+    image: busybox:latest
+    command:
+    - sleep
+    - "3600"  # 保持Pod运行1小时，方便测试
+    volumeMounts:
+    - name: nfs-storage
+      mountPath: /mnt/nfs
+    env:
+    - name: TEST_MESSAGE
+      value: "NFS挂载测试成功！"
+  volumes:
+  - name: nfs-storage
+    persistentVolumeClaim:
+      claimName: nfs-test-pvc
+  restartPolicy: Never 

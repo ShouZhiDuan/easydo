@@ -1,0 +1,69 @@
+server:
+  port: 18080
+
+spring:
+  application:
+    name: service-consumer
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        ip: 127.0.0.1
+        namespace: dev
+        group: DEFAULT_GROUP
+        cluster-name: DEFAULT
+        username: nacos
+        password: nacos
+        metadata:
+          version: 1.0.0
+          author: techzhi
+    openfeign:
+      client:
+        config:
+          default:
+            # 连接超时时间，单位是毫秒。表示 Feign 客户端在尝试与远程服务建立连接时，等待的最长时间。如果超过 5000 毫秒（即 5 秒）仍未建立连接，则会抛出连接超时异常。
+            connect-timeout: 5000
+            # 读取超时时间，单位是毫秒。表示 Feign 客户端在成功建立连接后，等待从远程服务接收响应数据的最长时间。如果超过 5000 毫秒（即 5 秒）仍未收到完整响应，则会抛出读取超时异常。
+            read-timeout: 5000
+            # 设置 Feign 客户端的日志级别。 basic 级别通常会记录请求方法、URL、响应状态码以及执行时间。
+            logger-level: basic
+      circuitbreaker:
+        # 启用 Feign 的熔断器支持。这意味着当 Feign 调用失败时，可以触发熔断机制（例如，由 Resilience4j 或 Hystrix 提供）。
+        enabled: true
+        # 可选：配置断路器组
+        group:
+          enabled: true
+
+# Resilience4j断路器配置（可选）
+resilience4j:
+  circuitbreaker:
+    instances:
+      service-provider:
+        # 故障率阈值。当在滑动窗口内，调用失败的百分比达到 50% 时，熔断器会从关闭（CLOSED）状态转换到打开（OPEN）状态。
+        failure-rate-threshold: 50
+        # 熔断器在打开（OPEN）状态下保持的时间。在这个例子中，熔断器打开后会保持 10 秒。10 秒后，熔断器会进入半开（HALF_OPEN）状态，尝试允许少量请求通过以检测下游服务是否恢复。
+        wait-duration-in-open-state: 10s
+        # 滑动窗口大小。熔断器会基于最近的 10 次调用来计算故障率。这个值决定了熔断器做决策时考虑的调用样本数量。
+        sliding-window-size: 10
+        # 最小调用次数。在滑动窗口内，至少需要有 5 次调用，熔断器才会开始计算故障率并可能触发熔断。如果调用次数少于 5 次，即使所有调用都失败，熔断器也不会打开。
+        minimum-number-of-calls: 5
+        
+
+# 监控端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# 日志配置
+logging:
+  level:
+    com.example.consumer: debug
+    com.alibaba.nacos: info
+    com.example.consumer.feign: debug
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

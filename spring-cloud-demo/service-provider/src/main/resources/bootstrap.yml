@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: service-provider
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      # 全局配置,会同时作用于 [服务发现] 和 [配置中心]
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      # 【配置中心】
+      config:
+        # [配置中心] 的特定配置,这里的配置会覆盖上面的全局配置。如果配置中心的地址、账号密码与全局一致,则无需重复配置。
+        # server-addr: 127.0.0.1:8848
+        # username: nacos
+        # password: nacos
+        namespace: dev
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        # 共享配置
+        shared-configs:
+          - data-id: base.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: service-provider.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+        # 扩展配置（优先级更高）
+        extension-configs:
+          - data-id: base.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: service-provider.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+      # 【服务发现】      
+      discovery:
+        server-addr: 127.0.0.1:8848
+        ip: 127.0.0.1
+        namespace: dev
+        group: DEFAULT_GROUP
+        cluster-name: DEFAULT
+        username: nacos
+        password: nacos
+        metadata:
+          version: 1.0.0
+          author: techzhi 
