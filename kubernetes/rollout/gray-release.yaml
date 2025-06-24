@@ -1,0 +1,263 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: gray-release-app
+  namespace: default
+  labels:
+    app: gray-release
+spec:
+  replicas: 6
+  strategy:
+    canary:
+      # 第一阶段：特定用户群体
+      steps:
+      - setWeight: 0
+      - pause: {}
+      # 第二阶段：内部用户 (5%)
+      - setCanaryScale:
+          weight: 5
+      - pause: {duration: 30}
+      # 第三阶段：Beta用户 (20%)
+      - setWeight: 20
+      - pause: {}
+      # 第四阶段：地区A用户 (50%)
+      - setWeight: 50
+      - pause: {duration: 60}
+      # 第五阶段：全量发布
+      - setWeight: 100
+      
+      # 流量分割配置
+      trafficRouting:
+        nginx:
+          stableIngress: gray-stable-ingress
+          annotationPrefix: nginx.ingress.kubernetes.io
+          additionalIngressAnnotations:
+            canary-by-header: "X-Canary-User"
+            canary-by-header-value: "beta,internal"
+            canary-by-cookie: "user_type"
+      
+      # 分析配置
+      analysis:
+        templates:
+        - templateName: gray-success-rate
+        args:
+        - name: service-name
+          value: gray-canary-service.default.svc.cluster.local
+        - name: user-type
+          value: "beta"
+        startingStep: 2
+        stepWeightThreshold: 20
+
+  selector:
+    matchLabels:
+      app: gray-release
+  template:
+    metadata:
+      labels:
+        app: gray-release
+        version: "v2"
+    spec:
+      containers:
+      - name: web-app
+        image: nginx:1.20
+        ports:
+        - containerPort: 80
+        env:
+        - name: APP_VERSION
+          value: "v2.0"
+        - name: RELEASE_TYPE
+          value: "gray"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: app-config
+          mountPath: /usr/share/nginx/html
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+      volumes:
+      - name: app-config
+        configMap:
+          name: gray-app-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gray-stable-service
+  namespace: default
+spec:
+  selector:
+    app: gray-release
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gray-canary-service
+  namespace: default
+spec:
+  selector:
+    app: gray-release
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gray-public-service
+  namespace: default
+spec:
+  selector:
+    app: gray-release
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30082
+  type: NodePort
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gray-app-config
+  namespace: default
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>灰度发布演示应用</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                margin: 40px; 
+                background: linear-gradient(135deg, #74b9ff, #0984e3);
+                color: white;
+            }
+            .container { 
+                background: rgba(0,0,0,0.1); 
+                padding: 30px; 
+                border-radius: 10px; 
+                text-align: center;
+            }
+            .version { 
+                font-size: 24px; 
+                font-weight: bold; 
+                color: #fdcb6e;
+            }
+            .info { 
+                margin: 20px 0; 
+                font-size: 16px;
+            }
+            .badge {
+                background: #00b894;
+                padding: 5px 15px;
+                border-radius: 20px;
+                display: inline-block;
+                margin: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 灰度发布演示应用</h1>
+            <div class="version">版本: v2.0 (灰度版本)</div>
+            <div class="info">
+                <div class="badge">灰度发布</div>
+                <div class="badge">多阶段部署</div>
+                <div class="badge">用户分组</div>
+            </div>
+            <p><strong>Pod名称:</strong> <span id="podName">${POD_NAME}</span></p>
+            <p><strong>发布类型:</strong> 灰度发布 (Gray Release)</p>
+            <p><strong>适用用户:</strong> Beta用户、内部用户</p>
+            <hr>
+            <h3>灰度发布说明</h3>
+            <ul style="text-align: left;">
+                <li>🎯 基于用户类型进行流量分配</li>
+                <li>📊 支持Header和Cookie分流</li>
+                <li>🌍 支持地理位置分流</li>
+                <li>🔄 多阶段逐步发布</li>
+                <li>📈 实时监控和分析</li>
+            </ul>
+        </div>
+        
+        <script>
+            // 显示用户信息
+            const userType = getCookie('user_type') || 'normal';
+            const canaryHeader = getHeader('X-Canary-User');
+            
+            if (userType === 'beta' || canaryHeader) {
+                document.body.style.background = 'linear-gradient(135deg, #a29bfe, #6c5ce7)';
+                document.querySelector('.version').innerHTML += ' - Beta用户版本';
+            }
+            
+            function getCookie(name) {
+                const value = "; " + document.cookie;
+                const parts = value.split("; " + name + "=");
+                if (parts.length === 2) return parts.pop().split(";").shift();
+            }
+            
+            function getHeader(name) {
+                // 简化的header检测
+                return window.location.search.includes('beta=true');
+            }
+        </script>
+    </body>
+    </html>
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gray-stable-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: gray-demo.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gray-stable-service
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gray-canary-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-by-header: "X-Canary-User"
+    nginx.ingress.kubernetes.io/canary-by-header-value: "beta,internal"
+    nginx.ingress.kubernetes.io/canary-by-cookie: "user_type"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: gray-demo.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gray-canary-service
+            port:
+              number: 80 
