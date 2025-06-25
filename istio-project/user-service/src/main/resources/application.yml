@@ -1,0 +1,158 @@
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: default
+  
+  # 移除数据库配置 - 现在使用内存Mock数据
+  # datasource:
+  #   url: jdbc:mysql://localhost:33306/user_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+  #   driver-class-name: com.mysql.cj.jdbc.Driver
+  #   username: root
+  #   password: 123456
+  # 
+  # jpa:
+  #   database-platform: org.hibernate.dialect.MySQL8Dialect
+  #   hibernate:
+  #     ddl-auto: update
+  #   show-sql: false
+  #   properties:
+  #     hibernate:
+  #       format_sql: true
+  # 
+  # sql:
+  #   init:
+  #     mode: always
+  #     schema-locations: classpath:schema.sql
+  #     data-locations: classpath:data.sql
+
+# Server configuration
+server:
+  port: 8080
+  shutdown: graceful
+
+# App configuration
+app:
+  version: v1
+
+# Order service configuration
+order:
+  service:
+    url: http://order-service:8080
+
+# Management and monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,configprops,loggers,httptrace
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.9, 0.95, 0.99
+  # 注释掉追踪配置 - Istio会自动处理分布式追踪
+  # tracing:
+  #   sampling:
+  #     probability: 1.0
+  # zipkin:
+  #   tracing:
+  #     endpoint: http://zipkin:9411/api/v2/spans
+
+# 注释掉Resilience4j配置 - Istio已提供熔断、重试、限流功能，避免代码污染
+# resilience4j:
+#   circuitbreaker:
+#     instances:
+#       order-service:
+#         registerHealthIndicator: true
+#         slidingWindowSize: 10
+#         permittedNumberOfCallsInHalfOpenState: 3
+#         slidingWindowType: COUNT_BASED
+#         waitDurationInOpenState: 5s
+#         failureRateThreshold: 50
+#         eventConsumerBufferSize: 10
+#         recordExceptions:
+#           - org.springframework.web.client.HttpServerErrorException
+#           - java.util.concurrent.TimeoutException
+#           - java.io.IOException
+#         ignoreExceptions:
+#           - java.lang.IllegalArgumentException
+#   
+#   retry:
+#     instances:
+#       order-service:
+#         maxAttempts: 3
+#         waitDuration: 1000ms
+#         retryExceptions:
+#           - org.springframework.web.client.HttpServerErrorException
+#           - java.util.concurrent.TimeoutException
+#           - java.io.IOException
+#   
+#   ratelimiter:
+#     instances:
+#       order-service:
+#         limitForPeriod: 10
+#         limitRefreshPeriod: 1s
+#         timeoutDuration: 100ms
+
+# Logging configuration
+logging:
+  level:
+    com.istio.demo: INFO
+    # 注释掉框架层面的调试日志 - 专注业务日志
+    # org.springframework.web: DEBUG
+    # org.springframework.cloud: DEBUG
+    # io.github.resilience4j: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/user-service.log
+
+---
+# Development profile - 移除数据库配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  # 移除数据库配置 - 使用内存Mock数据
+  # datasource:
+  #   url: jdbc:mysql://localhost:33306/user_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+  # 
+  # jpa:
+  #   show-sql: true
+
+logging:
+  level:
+    com.istio.demo: DEBUG
+    # 专注业务日志
+    # org.springframework: DEBUG
+
+---
+# Production profile - 移除数据库配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  # 移除数据库配置 - 使用内存Mock数据
+  # jpa:
+  #   show-sql: false
+
+logging:
+  level:
+    com.istio.demo: INFO
+    # 专注业务日志
+    # org.springframework: WARN 

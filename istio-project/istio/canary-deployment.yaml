@@ -1,0 +1,86 @@
+# 金丝雀部署 - User Service v2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-v2
+  namespace: istio-demo
+  labels:
+    app: user-service
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: user-service
+        version: v2
+    spec:
+      containers:
+      - name: user-service
+        image: user-service:v2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: APP_VERSION
+          value: "v2"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: ORDER_SERVICE_URL
+          value: "http://order-service:8080"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+# 金丝雀流量分配 - 10%流量到v2，90%流量到v1
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: user-service-canary
+  namespace: istio-demo
+spec:
+  hosts:
+  - user-service
+  http:
+  - match:
+    - headers:
+        canary:
+          exact: "true"
+    route:
+    - destination:
+        host: user-service
+        subset: v2
+  - route:
+    - destination:
+        host: user-service
+        subset: v1
+      weight: 90
+    - destination:
+        host: user-service
+        subset: v2
+      weight: 10
+---
+# 更新DestinationRule以支持v2
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: user-service-canary-dr
+  namespace: istio-demo
+spec:
+  host: user-service
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2 

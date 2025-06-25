@@ -1,0 +1,81 @@
+# 蓝绿部署 - Order Service Green版本
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service-green
+  namespace: istio-demo
+  labels:
+    app: order-service
+    version: green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+      version: green
+  template:
+    metadata:
+      labels:
+        app: order-service
+        version: green
+    spec:
+      containers:
+      - name: order-service
+        image: order-service:green
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: APP_VERSION
+          value: "green"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+# 蓝绿部署流量切换配置
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-service-blue-green
+  namespace: istio-demo
+spec:
+  hosts:
+  - order-service
+  http:
+  # 根据请求头决定路由到哪个版本
+  - match:
+    - headers:
+        version:
+          exact: "green"
+    route:
+    - destination:
+        host: order-service
+        subset: green
+  # 默认路由到蓝色版本(v1)
+  - route:
+    - destination:
+        host: order-service
+        subset: blue
+---
+# 更新DestinationRule以支持蓝绿部署
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: order-service-blue-green-dr
+  namespace: istio-demo
+spec:
+  host: order-service
+  subsets:
+  - name: blue
+    labels:
+      version: v1
+  - name: green
+    labels:
+      version: green 
