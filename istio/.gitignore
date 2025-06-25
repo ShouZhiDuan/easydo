@@ -1,0 +1,22 @@
+# 忽略二进制可执行文件
+bin/istioctl
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 忽略临时文件
+*.tmp
+*.log
+.DS_Store
+
+# 忽略IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 忽略操作系统文件
+Thumbs.db
+.DS_Store 
