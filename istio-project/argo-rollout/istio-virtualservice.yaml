@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-service-vs
+  namespace: rollout-demo
+spec:
+  hosts:
+  - order-service
+  http:
+  - name: primary
+    route:
+    - destination:
+        host: order-service
+      weight: 100
+    - destination:
+        host: order-service-canary
+      weight: 0 

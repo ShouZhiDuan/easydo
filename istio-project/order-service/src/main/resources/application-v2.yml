@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:h2:mem:orderdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+
+server:
+  port: 8080
+
+app:
+  version: v2
+  features:
+    - "Enhanced order processing"
+    - "Improved response times"  
+    - "Better error handling"
+    - "Advanced analytics"
+
+logging:
+  level:
+    com.istio.demo: INFO
