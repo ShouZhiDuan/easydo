@@ -3,5 +3,6 @@ kind: Namespace
 metadata:
   name: istio-demo
   labels:
+    # 开启istio注入
     istio-injection: enabled
     name: istio-demo 

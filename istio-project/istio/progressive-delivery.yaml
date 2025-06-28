@@ -1,0 +1,180 @@
+# Argo Rollouts 渐进式交付配置
+# 自动化金丝雀部署，无需手动维护每个版本
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: user-service-rollout
+  namespace: istio-demo
+  annotations:
+    rollout.argoproj.io/revision: "1"
+spec:
+  replicas: 5
+  strategy:
+    canary:
+      # 分析模板 - 自动化指标评估
+      analysis:
+        templates:
+        - templateName: success-rate
+        args:
+        - name: service-name
+          value: user-service
+      # 金丝雀步骤 - 自动渐进
+      steps:
+      - setWeight: 5
+      - pause: {duration: 2m}
+      - setWeight: 10
+      - pause: {duration: 2m}
+      - setWeight: 20
+      - pause: {duration: 5m}
+      - setWeight: 40
+      - pause: {duration: 10m}
+      - setWeight: 60
+      - pause: {duration: 10m}
+      - setWeight: 80
+      - pause: {duration: 10m}
+      # Istio流量分割
+      trafficRouting:
+        istio:
+          virtualService:
+            name: user-service-vs
+            routes:
+            - primary
+          destinationRule:
+            name: user-service-dr
+            canarySubsetName: canary
+            stableSubsetName: stable
+      # 自动回滚条件
+      antiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution: {}
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: user-service
+            topologyKey: kubernetes.io/hostname
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: user-service:stable
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+---
+# 自动化分析模板 - 基于Prometheus指标
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: istio-demo
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: success-rate
+    # 成功率必须大于99%
+    successCondition: result[0] >= 0.99
+    # 如果失败率过高则立即失败
+    failureCondition: result[0] < 0.95
+    provider:
+      prometheus:
+        address: http://prometheus.istio-system:9090
+        query: |
+          sum(irate(istio_requests_total{reporter="destination",destination_service_name="{{args.service-name}}",response_code!~"5.*"}[5m])) / 
+          sum(irate(istio_requests_total{reporter="destination",destination_service_name="{{args.service-name}}"}[5m]))
+    interval: 10s
+    count: 12  # 运行12次，每次10秒
+  - name: latency
+    # P99延迟必须小于500ms
+    successCondition: result[0] <= 500
+    failureCondition: result[0] > 1000
+    provider:
+      prometheus:
+        address: http://prometheus.istio-system:9090
+        query: |
+          histogram_quantile(0.99, 
+            sum(rate(istio_request_duration_milliseconds_bucket{reporter="destination",destination_service_name="{{args.service-name}}"}[5m])) by (le)
+          )
+    interval: 10s
+    count: 12
+---
+# Istio流量路由配置（由Argo Rollouts自动管理）
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: user-service-vs
+  namespace: istio-demo
+spec:
+  hosts:
+  - user-service
+  http:
+  - name: primary
+    route:
+    - destination:
+        host: user-service
+        subset: stable
+      weight: 100
+    - destination:
+        host: user-service
+        subset: canary
+      weight: 0
+---
+# 目标规则（由Argo Rollouts自动管理子集）
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: user-service-dr
+  namespace: istio-demo
+spec:
+  host: user-service
+  subsets:
+  - name: stable
+    labels:
+      app: user-service
+  - name: canary
+    labels:
+      app: user-service
+---
+# Service（保持不变）
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: istio-demo
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: user-service 

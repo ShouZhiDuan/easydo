@@ -4,7 +4,7 @@ metadata:
   name: user-service-dr
   namespace: istio-demo
 spec:
-  host: user-service
+  host: user-service.istio-demo.svc.cluster.local
   trafficPolicy:
     connectionPool:
       tcp:
@@ -19,17 +19,19 @@ spec:
       interval: 30s
       baseEjectionTime: 30s
       maxEjectionPercent: 50
-  subsets:
-  - name: v1
-    labels:
-      version: v1
-    trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 8080
       connectionPool:
         tcp:
           maxConnections: 50
         http:
           http1MaxPendingRequests: 25
           maxRequestsPerConnection: 10
+  subsets:
+  - name: v1
+    labels:
+      version: v1
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
@@ -37,7 +39,7 @@ metadata:
   name: order-service-dr
   namespace: istio-demo
 spec:
-  host: order-service
+  host: order-service.istio-demo.svc.cluster.local
   trafficPolicy:
     connectionPool:
       tcp:
@@ -52,14 +54,16 @@ spec:
       interval: 30s
       baseEjectionTime: 30s
       maxEjectionPercent: 50
-  subsets:
-  - name: v1
-    labels:
-      version: v1
-    trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 8080
       connectionPool:
         tcp:
           maxConnections: 50
         http:
           http1MaxPendingRequests: 25
-          maxRequestsPerConnection: 10 
+          maxRequestsPerConnection: 10
+  subsets:
+  - name: v1
+    labels:
+      version: v1 

@@ -60,6 +60,7 @@ metadata:
   labels:
     app: order-service
     service: order-service
+    version: v1
 spec:
   ports:
   - port: 8080

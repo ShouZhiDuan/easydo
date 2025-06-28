@@ -38,7 +38,7 @@ app:
 # Order service configuration
 order:
   service:
-    url: http://order-service:8080
+    url: http://order-service.istio-demo.svc.cluster.local:8080
 
 # Management and monitoring
 management:

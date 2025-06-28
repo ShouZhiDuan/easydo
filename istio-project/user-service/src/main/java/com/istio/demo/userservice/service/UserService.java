@@ -125,4 +125,15 @@ public class UserService {
         logger.info("Simulating error for user: {}", id);
         throw new RuntimeException("Simulated service error");
     }
+
+    public Mono<Map> traceOrderService() {
+        logger.info("Calling trace endpoint on order-service");
+        return webClient.get()
+                .uri(orderServiceUrl + "/api/orders/trace")
+                .retrieve()
+                .bodyToMono(Map.class)
+                .timeout(Duration.ofSeconds(5))
+                .doOnSuccess(response -> logger.info("Successfully received response from order-service trace endpoint"))
+                .doOnError(error -> logger.error("Failed to call trace endpoint on order-service", error));
+    }
 } 

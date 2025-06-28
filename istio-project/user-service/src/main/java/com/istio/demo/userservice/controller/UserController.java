@@ -175,4 +175,13 @@ public class UserController {
                 )
         ));
     }
+
+    @GetMapping("/trace")
+    public Mono<ResponseEntity<Map>> trace() {
+        logger.info("User service trace endpoint called");
+        return userService.traceOrderService()
+                .map(response -> ResponseEntity.ok(response))
+                .onErrorReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("error", "Order service trace failed")));
+    }
 } 

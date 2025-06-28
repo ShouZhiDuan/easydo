@@ -1,8 +1,8 @@
-# Telemetry配置
+# 简化的Telemetry配置 - 确保Kiali能看到基本指标
 apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
 metadata:
-  name: metrics
+  name: default-metrics
   namespace: istio-demo
 spec:
   metrics:
@@ -11,98 +11,36 @@ spec:
   - overrides:
     - match:
         metric: ALL_METRICS
-      tagOverrides:
-        request_protocol:
-          value: "http"
+      disabled: false
 ---
-# 分布式追踪配置
+# 分布式追踪配置 - 明确配置Jaeger
 apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
 metadata:
-  name: tracing
+  name: default-tracing
   namespace: istio-demo
 spec:
   tracing:
   - providers:
     - name: jaeger
-  - customTags:
-      user_id:
-        header:
-          name: "x-user-id"
-      request_id:
-        header:
-          name: "x-request-id"
+    customTags:
+      service.name:
+        literal:
+          value: "%{CANONICAL_SERVICE_NAME}.%{CANONICAL_SERVICE_NAMESPACE}"
+      service.namespace:
+        environment:
+          name: POD_NAMESPACE
+      service.version:
+        literal:
+          value: "v1"
 ---
 # 访问日志配置
 apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
 metadata:
-  name: access-logging
+  name: default-access-logging
   namespace: istio-demo
 spec:
   accessLogging:
   - providers:
-    - name: otel
----
-# EnvoyFilter用于自定义指标
-apiVersion: networking.istio.io/v1alpha3
-kind: EnvoyFilter
-metadata:
-  name: custom-metrics
-  namespace: istio-demo
-spec:
-  configPatches:
-  - applyTo: HTTP_FILTER
-    match:
-      context: SIDECAR_INBOUND
-      listener:
-        filterChain:
-          filter:
-            name: "envoy.filters.network.http_connection_manager"
-    patch:
-      operation: INSERT_BEFORE
-      value:
-        name: envoy.filters.http.wasm
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-          config:
-            configuration:
-              "@type": type.googleapis.com/google.protobuf.StringValue
-              value: |
-                {
-                  "metric_name": "custom_request_total",
-                  "labels": {
-                    "source_app": "{{.source_app}}",
-                    "destination_service": "{{.destination_service_name}}",
-                    "request_protocol": "{{.request_protocol}}"
-                  }
-                }
----
-# ServiceMonitor for Prometheus
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: istio-demo-metrics
-  namespace: istio-demo
-spec:
-  selector:
-    matchLabels:
-      app: user-service
-  endpoints:
-  - port: http
-    path: /actuator/prometheus
-    interval: 30s
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: istio-demo-order-metrics
-  namespace: istio-demo
-spec:
-  selector:
-    matchLabels:
-      app: order-service
-  endpoints:
-  - port: http
-    path: /actuator/prometheus
-    interval: 30s 
+    - name: otel 

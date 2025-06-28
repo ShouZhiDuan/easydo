@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress-wildcard
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: "*.local"  # 匹配任何 .local 结尾的域名
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp-service
+            port:
+              number: 18080
+  - host: "*.example.com"  # 匹配任何 .example.com 的子域名
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp-service
+            port:
+              number: 18080 

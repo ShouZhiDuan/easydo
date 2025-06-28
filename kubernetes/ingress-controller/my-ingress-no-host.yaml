@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress-no-host
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:  # 注意：这里没有 host 字段
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp-service
+            port:
+              number: 18080 

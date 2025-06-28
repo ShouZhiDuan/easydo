@@ -205,4 +205,14 @@ public class OrderController {
                 )
         ));
     }
+
+    @GetMapping("/trace")
+    public ResponseEntity<Map<String, String>> trace() {
+        logger.info("Order service trace endpoint called");
+        return ResponseEntity.ok(Map.of(
+                "message", "Successfully reached order-service",
+                "service", serviceName,
+                "version", version
+        ));
+    }
 } 

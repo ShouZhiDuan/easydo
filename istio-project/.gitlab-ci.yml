@@ -1,0 +1,275 @@
+stages:
+  - build
+  - security
+  - deploy-staging
+  - test
+  - deploy-production
+  - notify
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  KUBECTL_VERSION: "v1.28.0"
+  ARGO_ROLLOUTS_VERSION: "v1.6.0"
+
+# 缓存配置
+cache:
+  paths:
+    - .m2/repository/
+    - target/
+
+# 构建阶段
+build:
+  stage: build
+  image: maven:3.9-openjdk-17
+  before_script:
+    - cd $SERVICE_PATH
+  script:
+    - mvn clean compile test package -DskipTests=false
+    - docker build -t $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_SHA
+    # 创建语义化版本标签
+    - |
+      if [[ "$CI_COMMIT_REF_NAME" == "main" ]]; then
+        VERSION=$(cat pom.xml | grep -oPm1 "(?<=<version>)[^<]+")
+        docker tag $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/$SERVICE_NAME:$VERSION
+        docker push $CI_REGISTRY_IMAGE/$SERVICE_NAME:$VERSION
+        echo "VERSION=$VERSION" >> build.env
+      fi
+  artifacts:
+    reports:
+      junit: $SERVICE_PATH/target/surefire-reports/TEST-*.xml
+    paths:
+      - $SERVICE_PATH/target/*.jar
+    expire_in: 1 day
+    dotenv: build.env
+  parallel:
+    matrix:
+      - SERVICE_NAME: "user-service"
+        SERVICE_PATH: "user-service"
+      - SERVICE_NAME: "order-service" 
+        SERVICE_PATH: "order-service"
+  only:
+    changes:
+      - "user-service/**/*"
+      - "order-service/**/*"
+      - "pom.xml"
+
+# 安全扫描
+security-scan:
+  stage: security
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+  script:
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_SHA
+  parallel:
+    matrix:
+      - SERVICE_NAME: "user-service"
+      - SERVICE_NAME: "order-service"
+  allow_failure: true
+  only:
+    - main
+    - develop
+
+# Staging环境部署
+deploy-staging:
+  stage: deploy-staging
+  image: bitnami/kubectl:$KUBECTL_VERSION
+  before_script:
+    - kubectl config use-context $KUBE_CONTEXT_STAGING
+    - curl -LO https://github.com/argoproj/argo-rollouts/releases/download/$ARGO_ROLLOUTS_VERSION/kubectl-argo-rollouts-linux-amd64
+    - chmod +x kubectl-argo-rollouts-linux-amd64
+    - mv kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+  script:
+    - |
+      # 使用模板生成配置
+      ./scripts/deploy-template.sh $SERVICE_NAME $CI_COMMIT_SHA v1 canary 20
+      
+      # 部署到staging环境
+      kubectl apply -f generated/ -n istio-demo-staging
+      
+      # 等待部署完成
+      kubectl argo rollouts wait $SERVICE_NAME-rollout -n istio-demo-staging --timeout=300s
+      
+      # 健康检查
+      kubectl run health-check-$CI_JOB_ID --rm -i --restart=Never --image=curlimages/curl -- \
+        curl -f http://$SERVICE_NAME.istio-demo-staging:8080/actuator/health
+  parallel:
+    matrix:
+      - SERVICE_NAME: "user-service"
+      - SERVICE_NAME: "order-service"
+  environment:
+    name: staging/$SERVICE_NAME
+    url: https://staging-$SERVICE_NAME.example.com
+  only:
+    - develop
+    - main
+
+# 集成测试
+integration-test:
+  stage: test
+  image: maven:3.9-openjdk-17
+  script:
+    - cd integration-tests
+    - mvn test -Dtest.environment=staging
+  artifacts:
+    reports:
+      junit: integration-tests/target/surefire-reports/TEST-*.xml
+  only:
+    - develop
+    - main
+  dependencies:
+    - deploy-staging
+
+# 生产环境部署（自动）
+deploy-production-auto:
+  stage: deploy-production
+  image: bitnami/kubectl:$KUBECTL_VERSION
+  before_script:
+    - kubectl config use-context $KUBE_CONTEXT_PRODUCTION
+    - curl -LO https://github.com/argoproj/argo-rollouts/releases/download/$ARGO_ROLLOUTS_VERSION/kubectl-argo-rollouts-linux-amd64
+    - chmod +x kubectl-argo-rollouts-linux-amd64
+    - mv kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+  script:
+    - |
+      # 自动化渐进式部署
+      ./scripts/automated-deployment.sh $SERVICE_NAME $CI_REGISTRY_IMAGE/$SERVICE_NAME:$VERSION progressive
+  parallel:
+    matrix:
+      - SERVICE_NAME: "user-service"
+      - SERVICE_NAME: "order-service"
+  environment:
+    name: production/$SERVICE_NAME
+    url: https://$SERVICE_NAME.example.com
+  only:
+    - main
+  when: manual  # 需要手动触发生产部署
+  dependencies:
+    - build
+    - integration-test
+
+# 生产环境部署（紧急）
+deploy-production-emergency:
+  stage: deploy-production
+  image: bitnami/kubectl:$KUBECTL_VERSION
+  before_script:
+    - kubectl config use-context $KUBE_CONTEXT_PRODUCTION
+    - curl -LO https://github.com/argoproj/argo-rollouts/releases/download/$ARGO_ROLLOUTS_VERSION/kubectl-argo-rollouts-linux-amd64
+    - chmod +x kubectl-argo-rollouts-linux-amd64
+    - mv kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+  script:
+    - |
+      # 紧急部署模式
+      ./scripts/automated-deployment.sh $SERVICE_NAME $CI_REGISTRY_IMAGE/$SERVICE_NAME:$VERSION emergency
+  parallel:
+    matrix:
+      - SERVICE_NAME: "user-service"
+      - SERVICE_NAME: "order-service"
+  environment:
+    name: production/$SERVICE_NAME
+    url: https://$SERVICE_NAME.example.com
+  only:
+    - main
+  when: manual
+  allow_failure: false
+  dependencies:
+    - build
+
+# 回滚作业
+rollback-production:
+  stage: deploy-production
+  image: bitnami/kubectl:$KUBECTL_VERSION
+  before_script:
+    - kubectl config use-context $KUBE_CONTEXT_PRODUCTION
+    - curl -LO https://github.com/argoproj/argo-rollouts/releases/download/$ARGO_ROLLOUTS_VERSION/kubectl-argo-rollouts-linux-amd64
+    - chmod +x kubectl-argo-rollouts-linux-amd64
+    - mv kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+  script:
+    - |
+      # 执行回滚
+      ./scripts/automated-deployment.sh $SERVICE_NAME "" rollback
+  parallel:
+    matrix:
+      - SERVICE_NAME: "user-service"
+      - SERVICE_NAME: "order-service"
+  environment:
+    name: production/$SERVICE_NAME
+    url: https://$SERVICE_NAME.example.com
+  when: manual
+  only:
+    - main
+
+# 部署通知
+notify-success:
+  stage: notify
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      # 发送成功通知
+      if [ ! -z "$SLACK_WEBHOOK_URL" ]; then
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{
+            \"text\": \"✅ 部署成功\",
+            \"attachments\": [{
+              \"color\": \"good\",
+              \"fields\": [
+                {\"title\": \"项目\", \"value\": \"$CI_PROJECT_NAME\", \"short\": true},
+                {\"title\": \"分支\", \"value\": \"$CI_COMMIT_REF_NAME\", \"short\": true},
+                {\"title\": \"提交\", \"value\": \"$CI_COMMIT_SHA\", \"short\": true},
+                {\"title\": \"环境\", \"value\": \"Production\", \"short\": true},
+                {\"title\": \"流水线\", \"value\": \"$CI_PIPELINE_URL\", \"short\": false}
+              ]
+            }]
+          }" \
+          $SLACK_WEBHOOK_URL
+      fi
+  when: on_success
+  only:
+    - main
+
+notify-failure:
+  stage: notify
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      # 发送失败通知
+      if [ ! -z "$SLACK_WEBHOOK_URL" ]; then
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{
+            \"text\": \"❌ 部署失败\",
+            \"attachments\": [{
+              \"color\": \"danger\",
+              \"fields\": [
+                {\"title\": \"项目\", \"value\": \"$CI_PROJECT_NAME\", \"short\": true},
+                {\"title\": \"分支\", \"value\": \"$CI_COMMIT_REF_NAME\", \"short\": true},
+                {\"title\": \"失败作业\", \"value\": \"$CI_JOB_NAME\", \"short\": true},
+                {\"title\": \"流水线\", \"value\": \"$CI_PIPELINE_URL\", \"short\": false}
+              ]
+            }]
+          }" \
+          $SLACK_WEBHOOK_URL
+      fi
+  when: on_failure
+  only:
+    - main
+
+# 自定义规则
+workflow:
+  rules:
+    # 主分支：完整流程
+    - if: $CI_COMMIT_BRANCH == "main"
+    # 开发分支：仅到staging
+    - if: $CI_COMMIT_BRANCH == "develop"
+    # 合并请求：仅构建和测试
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        DEPLOY_ENVIRONMENT: "none" 

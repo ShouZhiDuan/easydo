@@ -1,0 +1,123 @@
+# 简单的Web应用 LoadBalancer 示例
+---
+# 1. Web应用 Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-web-app
+  labels:
+    app: simple-web
+spec:
+  replicas: 3  # 部署3个Pod副本
+  selector:
+    matchLabels:
+      app: simple-web
+  template:
+    metadata:
+      labels:
+        app: simple-web
+    spec:
+      containers:
+      - name: web-server
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+        # 自定义首页，显示Pod信息
+        volumeMounts:
+        - name: html-volume
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html-volume
+        configMap:
+          name: web-content
+
+---
+# 2. 自定义网页内容
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-content
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>LoadBalancer Demo</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                text-align: center; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                margin: 0;
+                padding: 50px;
+            }
+            .container { 
+                background: rgba(255,255,255,0.1); 
+                border-radius: 10px; 
+                padding: 30px; 
+                max-width: 600px; 
+                margin: 0 auto;
+            }
+            .pod-info { 
+                background: rgba(255,255,255,0.2); 
+                padding: 20px; 
+                border-radius: 5px; 
+                margin: 20px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 LoadBalancer Demo</h1>
+            <div class="pod-info">
+                <h3>当前服务信息</h3>
+                <p><strong>主机名:</strong> <span id="hostname"></span></p>
+                <p><strong>访问时间:</strong> <span id="timestamp"></span></p>
+                <p><strong>访问次数:</strong> <span id="counter">1</span></p>
+            </div>
+            <button onclick="refreshInfo()" style="padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                🔄 刷新信息
+            </button>
+            <p>每次刷新可能连接到不同的Pod，体验负载均衡效果！</p>
+        </div>
+        
+        <script>
+            let counter = 1;
+            
+            function updateInfo() {
+                document.getElementById('hostname').textContent = window.location.hostname || 'localhost';
+                document.getElementById('timestamp').textContent = new Date().toLocaleString();
+            }
+            
+            function refreshInfo() {
+                counter++;
+                document.getElementById('counter').textContent = counter;
+                updateInfo();
+                // 添加一个随机颜色变化
+                document.body.style.background = `linear-gradient(135deg, hsl(${Math.random()*360}, 70%, 60%) 0%, hsl(${Math.random()*360}, 70%, 40%) 100%)`;
+            }
+            
+            // 页面加载时初始化
+            updateInfo();
+        </script>
+    </body>
+    </html>
+
+---
+# 3. LoadBalancer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-web-loadbalancer
+  labels:
+    app: simple-web
+spec:
+  type: LoadBalancer
+  selector:
+    app: simple-web  # 选择上面Deployment创建的Pod
+  ports:
+    - name: http
+      port: 80        # 外部访问端口
+      targetPort: 80  # Pod内部端口
+      protocol: TCP 

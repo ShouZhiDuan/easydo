@@ -1,0 +1,47 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: user-service-vs
+  namespace: istio-demo
+spec:
+  hosts:
+  - user-service.istio-demo.svc.cluster.local
+  http:
+  - match:
+    - headers:
+        end-user:
+          regex: ".*"
+    route:
+    - destination:
+        host: user-service.istio-demo.svc.cluster.local
+        subset: v1
+      weight: 100
+  - route:
+    - destination:
+        host: user-service.istio-demo.svc.cluster.local
+        subset: v1
+      weight: 100
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-service-vs
+  namespace: istio-demo
+spec:
+  hosts:
+  - order-service.istio-demo.svc.cluster.local
+  http:
+  - match:
+    - headers:
+        end-user:
+          regex: ".*"
+    route:
+    - destination:
+        host: order-service.istio-demo.svc.cluster.local
+        subset: v1
+      weight: 100
+  - route:
+    - destination:
+        host: order-service.istio-demo.svc.cluster.local
+        subset: v1
+      weight: 100 

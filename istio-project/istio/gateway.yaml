@@ -25,6 +25,25 @@ spec:
   gateways:
   - istio-demo-gateway
   http:
+  # 用户服务 trace 接口路由
+  - match:
+    - uri:
+        exact: /api/users/trace
+    route:
+    - destination:
+        host: user-service
+        port:
+          number: 8080
+  # 订单服务 trace 接口路由  
+  - match:
+    - uri:
+        exact: /api/orders/trace
+    route:
+    - destination:
+        host: order-service
+        port:
+          number: 8080
+  # 用户服务其他接口路由
   - match:
     - uri:
         prefix: /api/users
@@ -33,6 +52,7 @@ spec:
         host: user-service
         port:
           number: 8080
+  # 订单服务其他接口路由
   - match:
     - uri:
         prefix: /api/orders

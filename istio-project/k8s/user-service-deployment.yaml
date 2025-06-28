@@ -62,6 +62,7 @@ metadata:
   labels:
     app: user-service
     service: user-service
+    version: v1
 spec:
   ports:
   - port: 8080

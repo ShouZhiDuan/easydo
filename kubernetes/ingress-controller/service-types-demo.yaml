@@ -1,0 +1,51 @@
+# 演示三种 Service 类型的区别
+---
+# 1. ClusterIP Service (默认类型)
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-clusterip
+  labels:
+    type: demo
+spec:
+  type: ClusterIP
+  selector:
+    app: myapp
+  ports:
+    - port: 80
+      targetPort: 80
+
+---
+# 2. NodePort Service (在 ClusterIP 基础上增加 NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-nodeport
+  labels:
+    type: demo
+spec:
+  type: NodePort
+  selector:
+    app: myapp
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30180  # 手动指定 NodePort
+
+---
+# 3. LoadBalancer Service (在 NodePort 基础上增加外部负载均衡器)
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-loadbalancer
+  labels:
+    type: demo
+spec:
+  type: LoadBalancer
+  selector:
+    app: myapp
+  ports:
+    - port: 80
+      targetPort: 80
+      # nodePort 会自动分配
+  # 云厂商会自动创建外部负载均衡器 
