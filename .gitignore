@@ -3,3 +3,4 @@
 **/.DS_Store
 **/logs/
 .vscode/settings.json
+istio-project/.vscode/
