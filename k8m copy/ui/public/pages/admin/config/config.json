@@ -1,0 +1,152 @@
+{
+  "body": [
+    {
+      "type": "form",
+      "mode": "horizontal",
+      "api": "/admin/config/update",
+      "initApi": "get:/admin/config/all",
+      "title": "配置管理",
+      "body": [
+        {
+          "type": "alert",
+          "level": "success",
+          "body": "<div class='alert alert-info'><p><strong>配置加载顺序 启动参数->环境变量->数据库参数设置（界面配置）</strong></p><p>以日志级别为例，启动参数设置2，环境变量设置3，界面配置4，那么最终生效日志级别为4</p></div>"
+        },
+        {
+          "type": "anchor-nav",
+          "links": [
+            {
+              "title": "AI配置",
+              "body": [
+                {
+                  "type": "fieldSet",
+                  "title": "AI配置",
+                  "body": [
+                    {
+                      "name": "enable_ai",
+                      "type": "switch",
+                      "label": "AI功能开关",
+                      "value": false,
+                      "desc": "是否启用AI功能，默认开启"
+                    },
+                    {
+                      "name": "use_built_in_model",
+                      "type": "switch",
+                      "label": "内置参数",
+                      "value": true,
+                      "desc": "是否使用k8m内置AI大模型"
+                    },
+                    {
+                      "label": "默认模型",
+                      "type": "select",
+                      "name": "model_id",
+                      "searchable": true,
+                      "selectMode": "table",
+                      "initFetch": true,
+                      "valueField": "id",
+                      "labelField": "api_model",
+                      "source": "get:/admin/ai/model/list",
+                      "columns": [
+                        {
+                          "name": "id",
+                          "label": "ID"
+                        },
+                        {
+                          "name": "api_model",
+                          "label": "模型名称"
+                        },
+                        {
+                          "name": "api_url",
+                          "label": "模型地址"
+                        }
+                      ],
+                      "visibleOn": "!use_built_in_model"
+                    },
+                    {
+                      "name": "max_history",
+                      "type": "input-number",
+                      "label": "上下文记忆",
+                      "value": "10",
+                      "desc": "适当的记忆量有助于提升回答精度"
+                    },
+                    {
+                      "name": "max_iterations",
+                      "type": "input-number",
+                      "label": "自动对话轮数",
+                      "value": "10",
+                      "desc": "适当提升有助于提升回答完整度"
+                    },
+                    {
+                      "name": "any_select",
+                      "type": "switch",
+                      "label": "任意选择",
+                      "value": false,
+                      "desc": "是否开启任意选择，默认开启"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "集群配置",
+              "body": [
+                {
+                  "type": "fieldSet",
+                  "title": "集群配置",
+                  "body": [
+                    {
+                      "name": "resource_cache_timeout",
+                      "type": "input-number",
+                      "suffix": "秒",
+                      "label": "资源缓存时间",
+                      "value": 60,
+                      "desc": "界面展示实时用量、指标、Pod元数据等资源的缓存时间（单位：秒），默认60秒。时间越短，界面变化越快，但是会增加k8s系统负担。"
+                    },
+                    {
+                      "name": "image_pull_timeout",
+                      "type": "input-number",
+                      "suffix": "秒",
+                      "label": "镜像拉取超时时间"
+                    },
+                    {
+                      "name": "node_shell_image",
+                      "type": "input-text",
+                      "label": "节点Shell镜像",
+                      "value": "alpine:latest",
+                      "desc": "NodeShell 镜像。默认为 alpine:latest，必须包含nsenter命令"
+                    },
+                    {
+                      "name": "kubectl_shell_image",
+                      "type": "input-text",
+                      "label": "Kubectl Shell镜像",
+                      "value": "bitnami/kubectl:latest",
+                      "desc": "Kubectl Shell 镜像。默认为 bitnami/kubectl:latest，必须包含kubectl命令"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "显示设置",
+              "body": [
+                {
+                  "type": "fieldSet",
+                  "title": "显示设置",
+                  "body": [
+                    {
+                      "name": "product_name",
+                      "type": "input-text",
+                      "label": "产品名称",
+                      "value": "K8M",
+                      "desc": "设置产品显示名称"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
