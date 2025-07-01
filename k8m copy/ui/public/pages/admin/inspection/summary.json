@@ -1,9 +1,0 @@
-{
-    "type": "page",
-    "body": [
-        {
-            "type": "inspectionSummary",
-            "schedule_id": ""
-        }
-    ]
-}
