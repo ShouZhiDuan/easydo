@@ -1,0 +1,477 @@
+{
+  "type": "page",
+  "body": [
+    {
+      "type": "container",
+      "className": "floating-toolbar-right",
+      "body": [
+        {
+          "type": "wrapper",
+          "style": {
+            "display": "inline-flex"
+          },
+          "body": [
+            {
+              "type": "form",
+              "mode": "inline",
+              "wrapWithPanel": false,
+              "body": [
+                {
+                  "label": "集群",
+                  "type": "select",
+                  "multiple": false,
+                  "name": "cluster",
+                  "id": "cluster",
+                  "searchable": true,
+                  "source": "/params/cluster/option_list",
+                  "value": "${ls:cluster}",
+                  "onEvent": {
+                    "change": {
+                      "actions": [
+                        {
+                          "actionType": "custom",
+                          "script": "localStorage.setItem('cluster', event.data.value)"
+                        },
+                        {
+                          "actionType": "custom",
+                          "script": "window.location.reload();"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "crud",
+      "id": "detailCRUD",
+      "name": "detailCRUD",
+      "autoFillHeight": true,
+      "autoGenerateFilter": {
+        "columnsNum": 4,
+        "showBtnToolbar": false
+      },
+      "headerToolbar": [
+        {
+          "type": "columns-toggler",
+          "align": "right",
+          "draggable": true,
+          "icon": "fas fa-cog",
+          "overlay": true,
+          "footerBtnSize": "sm"
+        },
+        {
+          "type": "tpl",
+          "tpl": "共${count}条",
+          "align": "right",
+          "visibleOn": "${count}"
+        },
+        "reload",
+        "bulkActions"
+      ],
+      "bulkActions": [
+        {
+          "label": "卸载应用",
+          "actionType": "ajax",
+          "confirmText": "确定要卸载吗？",
+          "api": {
+            "url": "/k8s/helm/release/batch/uninstall",
+            "method": "post",
+            "data": {
+              "name_list": "${selectedItems | pick:name }",
+              "ns_list": "${selectedItems | pick:namespace }"
+            }
+          }
+        }
+      ],
+      "loadDataOnce": true,
+      "syncLocation": false,
+      "initFetch": true,
+      "perPage": 10,
+      "footerToolbar": [
+        {
+          "type": "pagination",
+          "align": "right"
+        },
+        {
+          "type": "statistics",
+          "align": "right"
+        },
+        {
+          "type": "switch-per-page",
+          "align": "right"
+        }
+      ],
+      "api": "get:/k8s/helm/release/list",
+      "columns": [
+        {
+          "type": "operation",
+          "label": "操作",
+          "width": 120,
+          "buttons": [
+            {
+              "type": "button",
+              "label": "详情",
+              "actionType": "drawer",
+              "drawer": {
+                "title": "${name} 详情 （ESC 关闭）",
+                "size": "lg",
+                "closeOnEsc": true,
+                "body": {
+                  "type": "form",
+                  "mode": "horizontal",
+                  "horizontal": {
+                    "left": 1,
+                    "right": 9
+                  },
+                  "controls": [
+                    {
+                      "type": "static-image",
+                      "name": "chart.metadata.icon",
+                      "thumbMode": "contain",
+                      "thumbRatio": "1:1",
+                      "width": "100px",
+                      "height": "100px"
+                    },
+                    {
+                      "label": "应用信息",
+                      "type": "tpl",
+                      "tpl": " <a href=${chart.metadata.home} target=_blank>主页</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href=${chart.metadata.sources} target=_blank>源码</a>"
+                    },
+                    {
+                      "name": "name",
+                      "label": "应用实例",
+                      "type": "tpl",
+                      "tpl": "${namespace}/${name}"
+                    },
+                    {
+                      "name": "info.status",
+                      "label": "实例状态",
+                      "type": "container",
+                      "body": [
+                        {
+                          "type": "tpl",
+                          "tpl": "<span class='label label-success'>${chart.metadata.version}</span>&nbsp;&nbsp;&nbsp;&nbsp;"
+                        },
+                        {
+                          "name": "info.status",
+                          "label": "状态",
+                          "type": "mapping",
+                          "map": {
+                            "deployed": "<span class='label label-success'>已部署</span>",
+                            "uninstalled": "<span class='label label-default'>已卸载</span>",
+                            "failed": "<span class='label label-danger'>失败</span>",
+                            "superseded": "<span class='label label-info'>已取代</span>",
+                            "uninstalling": "<span class='label label-primary'>卸载中</span>",
+                            "pending-install": "<span class='label label-warning'>待安装</span>",
+                            "pending-upgrade": "<span class='label label-warning'>待升级</span>",
+                            "pending-rollback": "<span class='label label-warning'>待回滚</span>",
+                            "unknown": "<span class='label label-default'>未知</span>",
+                            "*": "<span class='label label-warning'>${info.status}</span>"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "params",
+                      "label": "安装参数",
+                      "type": "container",
+                      "body": [
+                        {
+                          "type": "button",
+                          "label": "点击查看",
+                          "actionType": "drawer",
+                          "drawer": {
+                            "overlay": false,
+                            "closeOnEsc": true,
+                            "closeOnOutside": true,
+                            "size": "xl",
+                            "title": "参数查看（ESC 关闭）",
+                            "body": [
+                              {
+                                "type": "diffEditor",
+                                "originalValue": "${chart.values}",
+                                "modifiedValue": "${config}",
+                                "originalLabel": "默认参数",
+                                "modifiedLabel": "用户指定参数",
+                                "readOnly": true,
+                                "language": "yaml"
+                              }
+                            ],
+                            "actions": [
+                              {
+                                "type": "button",
+                                "label": "关闭",
+                                "close": true
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "params",
+                      "label": "更新参数",
+                      "type": "container",
+                      "body": [
+                        {
+                          "type": "button",
+                          "label": "更新参数",
+                          "actionType": "drawer",
+                          "drawer": {
+                            "overlay": false,
+                            "closeOnEsc": true,
+                            "size": "xl",
+                            "title": "更新${name}（ESC 关闭）",
+                            "body": [
+                              {
+                                "type": "helmUpdateRelease"
+                              }
+                            ],
+                            "actions": [
+                              {
+                                "type": "button",
+                                "label": "关闭",
+                                "close": true
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "info.notes",
+                      "label": "安装结果",
+                      "type": "tpl",
+                      "tpl": "${info.notes}",
+                      "style": {
+                        "whiteSpace": "pre-wrap"
+                      }
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "type": "button",
+                    "label": "关闭",
+                    "close": true
+                  }
+                ]
+              }
+            }
+          ],
+          "toggled": true
+        },
+        {
+          "name": "name",
+          "label": "应用",
+          "type": "text",
+          "sortable": true,
+          "searchable": {
+            "type": "input-text",
+            "name": "name",
+            "clearable": true,
+            "label": "应用",
+            "placeholder": "输入应用名称"
+          }
+        },
+        {
+          "name": "namespace",
+          "label": "命名空间",
+          "type": "text",
+          "sortable": true
+        },
+        {
+          "name": "chart.metadata.name",
+          "label": "chart包",
+          "type": "text"
+        },
+        {
+          "name": "chart.metadata.version",
+          "label": "应用版本",
+          "type": "text"
+        },
+        {
+          "name": "version",
+          "label": "变更历史",
+          "type": "container",
+          "body": [
+            {
+              "type": "button",
+              "label": "查看",
+              "actionType": "drawer",
+              "drawer": {
+                "overlay": false,
+                "closeOnEsc": true,
+                "size": "xl",
+                "title": "${name} 变更历史（ESC 关闭）",
+                "body": [
+                  {
+                    "type": "crud",
+                    "id": "detailHistoryCRUD",
+                    "name": "detailHistoryCRUD",
+                    "autoFillHeight": true,
+                    "autoGenerateFilter": {
+                      "columnsNum": 4,
+                      "showBtnToolbar": false
+                    },
+                    "headerToolbar": [
+                      {
+                        "type": "columns-toggler",
+                        "align": "right",
+                        "draggable": true,
+                        "icon": "fas fa-cog",
+                        "overlay": true,
+                        "footerBtnSize": "sm"
+                      },
+                      {
+                        "type": "tpl",
+                        "tpl": "共${count}条",
+                        "align": "right",
+                        "visibleOn": "${count}"
+                      },
+                      "reload"
+                    ],
+                    "loadDataOnce": true,
+                    "syncLocation": false,
+                    "initFetch": true,
+                    "perPage": 10,
+                    "footerToolbar": [
+                      {
+                        "type": "pagination",
+                        "align": "right"
+                      },
+                      {
+                        "type": "statistics",
+                        "align": "right"
+                      },
+                      {
+                        "type": "switch-per-page",
+                        "align": "right"
+                      }
+                    ],
+                    "api": "get:/k8s/helm/release/ns/${namespace}/name/${name}/history/list",
+                    "columns": [
+                      {
+                        "name": "version",
+                        "label": "变更版本",
+                        "type": "text"
+                      },
+                      {
+                        "name": "chart.metadata.version",
+                        "label": "应用版本",
+                        "type": "text"
+                      },
+                      {
+                        "name": "info.status",
+                        "label": "状态",
+                        "type": "mapping",
+                        "map": {
+                          "deployed": "<span class='label label-success'>已部署</span>",
+                          "uninstalled": "<span class='label label-default'>已卸载</span>",
+                          "failed": "<span class='label label-danger'>失败</span>",
+                          "superseded": "<span class='label label-info'>已取代</span>",
+                          "uninstalling": "<span class='label label-primary'>卸载中</span>",
+                          "pending-install": "<span class='label label-warning'>待安装</span>",
+                          "pending-upgrade": "<span class='label label-warning'>待升级</span>",
+                          "pending-rollback": "<span class='label label-warning'>待回滚</span>",
+                          "unknown": "<span class='label label-default'>未知</span>",
+                          "*": "<span class='label label-warning'>${info.status}</span>"
+                        }
+                      },
+                      {
+                        "name": "params",
+                        "label": "安装参数",
+                        "type": "container",
+                        "body": [
+                          {
+                            "type": "button",
+                            "label": "点击查看",
+                            "actionType": "drawer",
+                            "drawer": {
+                              "overlay": false,
+                              "closeOnEsc": true,
+                              "closeOnOutside": true,
+                              "size": "xl",
+                              "title": "参数查看（ESC 关闭）",
+                              "body": [
+                                {
+                                  "type": "diffEditor",
+                                  "originalValue": "${chart.values}",
+                                  "modifiedValue": "${config}",
+                                  "originalLabel": "默认参数",
+                                  "modifiedLabel": "用户指定参数",
+                                  "readOnly": true,
+                                  "language": "yaml"
+                                }
+                              ],
+                              "actions": [
+                                {
+                                  "type": "button",
+                                  "label": "关闭",
+                                  "close": true
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "name": "info.first_deployed",
+                        "label": "安装时间",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "info.last_deployed",
+                        "label": "最后更新",
+                        "type": "k8sAge"
+                      }
+                    ]
+                  }
+                ],
+                "actions": [
+                  {
+                    "type": "button",
+                    "label": "关闭",
+                    "close": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "info.status",
+          "label": "状态",
+          "type": "mapping",
+          "map": {
+            "deployed": "<span class='label label-success'>已部署</span>",
+            "uninstalled": "<span class='label label-default'>已卸载</span>",
+            "failed": "<span class='label label-danger'>失败</span>",
+            "superseded": "<span class='label label-info'>已取代</span>",
+            "uninstalling": "<span class='label label-primary'>卸载中</span>",
+            "pending-install": "<span class='label label-warning'>待安装</span>",
+            "pending-upgrade": "<span class='label label-warning'>待升级</span>",
+            "pending-rollback": "<span class='label label-warning'>待回滚</span>",
+            "unknown": "<span class='label label-default'>未知</span>",
+            "*": "<span class='label label-warning'>${info.status}</span>"
+          }
+        },
+        {
+          "name": "info.first_deployed",
+          "label": "安装时间",
+          "type": "datetime"
+        },
+        {
+          "name": "info.last_deployed",
+          "label": "最后更新",
+          "type": "k8sAge"
+        }
+      ]
+    }
+  ]
+}
