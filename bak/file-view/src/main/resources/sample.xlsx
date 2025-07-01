@@ -1,7 +1,0 @@
-这是一个示例Excel文件位置。在实际使用中，你可以将测试用的Excel文件放置在这里。
-
-如果需要通过路径预览服务器文件，可以将Excel文件放在resources目录下，然后使用API:
-GET /api/excel/preview/{fileName}
-
-例如：
-GET /api/excel/preview/sample.xlsx 
