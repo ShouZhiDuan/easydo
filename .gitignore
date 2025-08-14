@@ -4,3 +4,4 @@
 **/logs/
 .vscode/settings.json
 istio-project/.vscode/
+gogo/gogs-data

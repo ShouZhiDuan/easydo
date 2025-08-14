@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  gogs:
+    image: gogs/gogs
+    container_name: gogs
+    restart: unless-stopped
+    ports:
+      - "10022:22"    # SSH port
+      - "10880:3000"  # Web UI port
+    volumes:
+      - ./gogs-data:/data  # 使用本地数据目录
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    networks:
+      - gogs-network
+
+networks:
+  gogs-network:
+    driver: bridge
